@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface RequiresPermission {
-    String[] value();
 
+    String[] value();
     Match match() default Match.ALL;
 }

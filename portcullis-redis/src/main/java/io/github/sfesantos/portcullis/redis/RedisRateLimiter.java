@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 public final class RedisRateLimiter implements RateLimiter {
+
     private static final System.Logger LOG = System.getLogger(RedisRateLimiter.class.getName());
     private static final RedisScript TOKEN_BUCKET = RedisScript.load("token-bucket.lua");
     private final RedisScripts redis;
@@ -49,6 +50,7 @@ public final class RedisRateLimiter implements RateLimiter {
     }
 
     public static final class Builder {
+
         private final RedisScripts redis;
         private String prefix = "portcullis:rl:";
         private OnRedisFailure onFailure = OnRedisFailure.DENY;

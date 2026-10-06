@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 public final class RedisIdempotencyStore implements IdempotencyStore {
+
     private static final RedisScript RESERVE = RedisScript.load("idempotency-reserve.lua");
     private static final RedisScript COMPLETE = RedisScript.load("idempotency-complete.lua");
     private static final RedisScript RELEASE = RedisScript.load("idempotency-release.lua");

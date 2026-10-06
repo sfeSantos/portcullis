@@ -9,6 +9,7 @@ import java.util.Map;
 public record Resolvers(Map<Class<?>, OwnershipResolver<?>> ownership,
                         Map<Class<?>, TenantResolver<?>> tenancy,
                         RateLimiter rateLimiter) {
+
     public Resolvers {
         ownership = Map.copyOf(ownership);
         tenancy = Map.copyOf(tenancy);

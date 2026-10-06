@@ -4,9 +4,10 @@ import java.time.Duration;
 
 @FunctionalInterface
 public interface RateLimiter {
-    Decision tryAcquire(String key, String subject, int limit, Duration window);
 
+    Decision tryAcquire(String key, String subject, int limit, Duration window);
     record Decision(boolean allowed, Duration retryAfter) {
+
         private static final Decision ALLOWED = new Decision(true, Duration.ZERO);
 
         public static Decision allow() {

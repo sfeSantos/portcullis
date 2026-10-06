@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CaffeineIdempotencyStoreTest {
+
     private final AtomicLong now = new AtomicLong();
     private final CaffeineIdempotencyStore store = CaffeineIdempotencyStore.withTicker(1_000, now::get);
     private final Duration lease = Duration.ofMinutes(1);

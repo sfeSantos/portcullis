@@ -11,14 +11,13 @@ import org.aspectj.lang.reflect.MethodSignature;
 
 @Aspect
 public class PortcullisAspect {
+
     // "..*" also matches the nested OwnedBy.List and SameTenant.List containers.
     @Pointcut("execution(@(io.github.sfesantos.portcullis.annotation..*) public !static * *(..))")
-    void annotatedMethod() {
-    }
+    void annotatedMethod() {}
 
     @Pointcut("execution(public !static * *(..)) && within(@(io.github.sfesantos.portcullis.annotation..*) *)")
-    void methodOfAnnotatedType() {
-    }
+    void methodOfAnnotatedType() {}
 
     @Before("annotatedMethod() || methodOfAnnotatedType()")
     public void enforce(JoinPoint joinPoint) {

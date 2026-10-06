@@ -7,6 +7,7 @@ import io.lettuce.core.api.sync.RedisScriptingCommands;
 import java.util.List;
 
 public final class LettuceRedisScripts implements RedisScripts {
+
     private final RedisScriptingCommands<String, String> commands;
 
     public LettuceRedisScripts(RedisScriptingCommands<String, String> commands) {

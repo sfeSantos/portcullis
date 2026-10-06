@@ -5,6 +5,7 @@ import io.github.sfesantos.portcullis.TenantResolver;
 import io.github.sfesantos.portcullis.audit.Check;
 
 final class TenantRule implements AccessRule {
+
     private final ResourceArgument argument;
     private final String[] bypassRoles;
     private final TenantResolver<Object> resolver;
@@ -23,7 +24,8 @@ final class TenantRule implements AccessRule {
             return;
         }
 
-        var tenant = user.tenantId().orElseThrow(() -> deny(request, "user has no tenant"));
+        var tenant = user.tenantId()
+                .orElseThrow(() -> deny(request, "user has no tenant"));
         var id = argument.read(request.arguments());
 
         if (id == null) {

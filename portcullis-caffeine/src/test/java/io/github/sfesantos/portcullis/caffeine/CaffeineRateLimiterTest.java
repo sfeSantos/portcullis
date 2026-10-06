@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CaffeineRateLimiterTest {
+
     private final AtomicLong now = new AtomicLong();
     private final CaffeineRateLimiter limiter = CaffeineRateLimiter.withTicker(1_000, now::get);
     private final Duration minute = Duration.ofMinutes(1);

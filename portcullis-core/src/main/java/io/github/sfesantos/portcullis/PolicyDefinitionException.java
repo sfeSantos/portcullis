@@ -1,6 +1,7 @@
 package io.github.sfesantos.portcullis;
 
 public class PolicyDefinitionException extends PortcullisException {
+
     public PolicyDefinitionException(String message) {
         super(message);
     }

@@ -6,11 +6,14 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 
 public final class LoggingAuditListener implements AuditListener {
+
     private static final Logger LOG = System.getLogger("io.github.sfesantos.portcullis.audit");
 
     @Override
     public void onAccess(AccessEvent event) {
-        var user = event.user().map(SecurityPrincipal::id).orElse("anonymous");
+        var user = event.user()
+                .map(SecurityPrincipal::id)
+                .orElse("anonymous");
 
         if (event.granted()) {
             LOG.log(Level.DEBUG, "access granted: user={0} operation={1}", user, event.operation());

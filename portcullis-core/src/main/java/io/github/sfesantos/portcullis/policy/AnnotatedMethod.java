@@ -5,7 +5,21 @@ import io.github.sfesantos.portcullis.annotation.ResourceId;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
+/**
+ * Answers which Portcullis annotations apply to a call, for {@link PolicyCompiler}.
+ *
+ * <p>The method the aspect sees is not always the one carrying the annotations. A call through an
+ * interface arrives as the interface method, and a framework proxy (CGLIB, ByteBuddy, Hibernate) is a
+ * generated subclass with no annotations of its own. So this class keeps both the invoked method and
+ * the most specific implementation on the target class, and every lookup checks the implementation
+ * first and falls back to the invoked method.
+ *
+ * <p>Everything here is reflection, which is why it never runs on the hot path. An instance lives only
+ * while {@link PolicyCompiler} compiles a policy, once per target class and method; the compiled
+ * {@link MethodPolicy} keeps the resulting rules and parameter indexes, and this object is discarded.
+ */
 final class AnnotatedMethod {
+
     private final Method invoked;
     private final Method implementation;
 
@@ -96,7 +110,7 @@ final class AnnotatedMethod {
                 if (!candidate.isBridge() && !candidate.isSynthetic()) {
                     return candidate;
                 }
-            } catch (NoSuchMethodException notDeclaredHere) {
+            } catch (NoSuchMethodException _) {
             }
         }
 

@@ -6,6 +6,7 @@ import io.github.sfesantos.portcullis.ratelimit.RateLimiter;
 import java.time.Duration;
 
 final class RateLimitRule implements AccessRule {
+
     static final String ANONYMOUS = "anonymous";
 
     private final String key;

@@ -3,6 +3,7 @@ package io.github.sfesantos.portcullis;
 import java.time.Duration;
 
 public class RateLimitExceededException extends PortcullisException {
+
     private final Duration retryAfter;
 
     public RateLimitExceededException(String message, Duration retryAfter) {

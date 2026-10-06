@@ -20,7 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class IdempotencyGuardTest {
+
     static class Payments {
+
         @Idempotent
         public String pay(@IdempotencyKey String key, long amount) {
             return "paid";
@@ -37,8 +39,7 @@ class IdempotencyGuardTest {
         }
 
         @Idempotent
-        public void twoKeys(@IdempotencyKey String a, @IdempotencyKey String b) {
-        }
+        public void twoKeys(@IdempotencyKey String a, @IdempotencyKey String b) {}
     }
 
     private final AtomicLong now = new AtomicLong();

@@ -11,9 +11,8 @@ import java.time.temporal.ChronoUnit;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Idempotent {
+
     long ttl() default 24;
-
     ChronoUnit unit() default ChronoUnit.HOURS;
-
     boolean required() default true;
 }

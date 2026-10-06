@@ -6,6 +6,7 @@ import java.util.Set;
 
 public record SimplePrincipal(String id, Set<String> roles, Set<String> permissions, String tenant)
         implements SecurityPrincipal {
+
     public SimplePrincipal {
         Objects.requireNonNull(id, "id");
         roles = roles == null ? Set.of() : Set.copyOf(roles);

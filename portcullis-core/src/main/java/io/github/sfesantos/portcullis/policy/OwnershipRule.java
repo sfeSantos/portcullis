@@ -5,6 +5,7 @@ import io.github.sfesantos.portcullis.OwnershipResolver;
 import io.github.sfesantos.portcullis.audit.Check;
 
 final class OwnershipRule implements AccessRule {
+
     private final ResourceArgument argument;
     private final String[] bypassRoles;
     private final OwnershipResolver<Object> resolver;

@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.util.List;
 
 public final class AuditPublisher {
+
     private static final System.Logger LOG = System.getLogger(AuditPublisher.class.getName());
 
     private final AuditListener[] listeners;

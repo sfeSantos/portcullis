@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 
 final class RedisScript {
+
     private final String source;
     private final String sha1;
 

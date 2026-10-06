@@ -12,14 +12,14 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Repeatable(OwnedBy.List.class)
 public @interface OwnedBy {
+
     Class<?> value();
-
     String[] bypassRoles() default {};
-
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @interface List {
+
         OwnedBy[] value();
     }
 }

@@ -1,6 +1,7 @@
 package io.github.sfesantos.portcullis;
 
 public abstract class PortcullisException extends RuntimeException {
+
     protected PortcullisException(String message) {
         super(message);
     }

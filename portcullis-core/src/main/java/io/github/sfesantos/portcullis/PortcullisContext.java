@@ -48,6 +48,7 @@ public final class PortcullisContext {
 
     @FunctionalInterface
     public interface Scope extends AutoCloseable {
+
         @Override
         void close();
     }

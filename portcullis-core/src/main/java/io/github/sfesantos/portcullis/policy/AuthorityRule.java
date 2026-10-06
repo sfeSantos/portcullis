@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 final class AuthorityRule implements AccessRule {
+
     private final Check check;
     private final Function<SecurityPrincipal, Set<String>> authorities;
     private final String[] required;

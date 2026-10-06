@@ -10,6 +10,7 @@ import io.github.sfesantos.portcullis.ratelimit.TokenBucket;
 import java.time.Duration;
 
 public final class CaffeineRateLimiter implements RateLimiter {
+
     public static final long DEFAULT_MAXIMUM_SIZE = 100_000;
 
     private final Cache<BucketKey, TokenBucket> buckets;

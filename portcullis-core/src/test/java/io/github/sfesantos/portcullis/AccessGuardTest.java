@@ -83,7 +83,9 @@ class AccessGuardTest {
 
         @Test
         void providerReturningNullCountsAsAnonymous() {
-            var sloppy = AccessGuard.builder().principalProvider(() -> null).build();
+            var sloppy = AccessGuard.builder()
+                    .principalProvider(() -> null)
+                    .build();
 
             assertThat(sloppy.currentPrincipal()).isEmpty();
             assertThatThrownBy(() -> sloppy.check(method(OrderApi.class, "me"), OrderApi.class, new Object[0]))
@@ -284,7 +286,9 @@ class AccessGuardTest {
 
         @Test
         void missingResolverFailsClosed() {
-            var bare = AccessGuard.builder().principalProvider(() -> java.util.Optional.of(ALICE)).build();
+            var bare = AccessGuard.builder()
+                    .principalProvider(() -> java.util.Optional.of(ALICE))
+                    .build();
             assertThatThrownBy(() -> bare.check(method(OrderApi.class, "get"), OrderApi.class, new Object[] {1L}))
                     .isInstanceOf(PolicyDefinitionException.class)
                     .hasMessageContaining("no OwnershipResolver registered");

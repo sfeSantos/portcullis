@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 class RedisIdempotencyStoreTest {
+
     @Container
     private static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
 

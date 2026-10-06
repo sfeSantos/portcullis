@@ -12,8 +12,7 @@ import io.github.sfesantos.portcullis.annotation.SameTenant;
 
 final class Fixtures {
 
-    private Fixtures() {
-    }
+    private Fixtures() {}
 
     record Order(long id, String owner) {
     }
@@ -25,6 +24,7 @@ final class Fixtures {
     }
 
     record UpdateOrder(Long orderId, String note) implements HasResourceId<Long> {
+
         @Override
         public Long resourceId() {
             return orderId;
@@ -43,28 +43,22 @@ final class Fixtures {
         }
 
         @RequiresRole({"ADMIN", "SUPPORT"})
-        public void anyRole() {
-        }
+        public void anyRole() {}
 
         @RequiresRole(value = {"ADMIN", "AUDITOR"}, match = Match.ALL)
-        public void allRoles() {
-        }
+        public void allRoles() {}
 
         @RequiresPermission({"orders:read", "orders:export"})
-        public void export() {
-        }
+        public void export() {}
 
         @OwnedBy(Order.class)
-        public void get(@ResourceId Long orderId) {
-        }
+        public void get(@ResourceId Long orderId) {}
 
         @OwnedBy(value = Order.class, bypassRoles = "ADMIN")
-        public void cancel(@ResourceId Long orderId) {
-        }
+        public void cancel(@ResourceId Long orderId) {}
 
         @OwnedBy(Order.class)
-        public void update(@ResourceId UpdateOrder request) {
-        }
+        public void update(@ResourceId UpdateOrder request) {}
 
         @OwnedBy(Order.class)
         @OwnedBy(Item.class)
@@ -72,50 +66,43 @@ final class Fixtures {
         }
 
         @SameTenant(Invoice.class)
-        public void invoice(@ResourceId String invoiceId) {
-        }
+        public void invoice(@ResourceId String invoiceId) {}
 
         @RateLimit(requests = 2)
-        public void limited() {
-        }
+        public void limited() {}
 
         @OwnedBy(Order.class)
-        public void missingResourceId(Long orderId) {
-        }
+        public void missingResourceId(Long orderId) {}
 
         @OwnedBy(Item.class)
-        public void unregisteredResolver(@ResourceId Long itemId) {
-        }
+        public void unregisteredResolver(@ResourceId Long itemId) {}
 
         @OwnedBy(Order.class)
-        public void ambiguous(@ResourceId Long a, @ResourceId Long b) {
-        }
+        public void ambiguous(@ResourceId Long a, @ResourceId Long b) {}
     }
 
     @Authenticated
     @RequiresRole("USER")
     static class AccountApi {
 
-        public void profile() {
-        }
+        public void profile() {}
 
         @RequiresRole("ADMIN")
-        public void admin() {
-        }
+        public void admin() {}
 
         @PublicAccess
-        public void login() {
-        }
+        public void login() {}
     }
 
     interface Documents {
+
         void read(Long id);
     }
 
     static class DocumentService implements Documents {
+
         @Override
         @OwnedBy(Order.class)
-        public void read(@ResourceId Long id) {
-        }
+        public void read(@ResourceId Long id) {}
     }
 }

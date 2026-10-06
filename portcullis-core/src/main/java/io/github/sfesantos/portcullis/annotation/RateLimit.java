@@ -13,11 +13,9 @@ import java.time.temporal.ChronoUnit;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.TYPE})
 public @interface RateLimit {
+
     int requests();
-
     long window() default 1;
-
     ChronoUnit unit() default ChronoUnit.MINUTES;
-
     String key() default "";
 }

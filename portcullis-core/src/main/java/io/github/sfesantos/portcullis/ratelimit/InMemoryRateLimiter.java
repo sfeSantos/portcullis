@@ -31,7 +31,10 @@ public final class InMemoryRateLimiter implements RateLimiter {
     }
 
     public int size() {
-        return limits.values().stream().mapToInt(ConcurrentHashMap::size).sum();
+        return limits.values()
+                .stream()
+                .mapToInt(ConcurrentHashMap::size)
+                .sum();
     }
 
     private TokenBucket bucket(String key, String subject, int limit, Duration window, long now) {
@@ -54,7 +57,10 @@ public final class InMemoryRateLimiter implements RateLimiter {
         var due = nextSweep.get();
 
         if (now - due >= 0 && nextSweep.compareAndSet(due, now + SWEEP_INTERVAL_NANOS)) {
-            limits.values().forEach(subjects -> subjects.values().removeIf(b -> b.isIdle(now)));
+            limits.values()
+                    .forEach(subjects -> subjects
+                            .values()
+                            .removeIf(b -> b.isIdle(now)));
         }
     }
 }

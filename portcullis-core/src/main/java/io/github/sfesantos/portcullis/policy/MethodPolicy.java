@@ -3,6 +3,7 @@ package io.github.sfesantos.portcullis.policy;
 import io.github.sfesantos.portcullis.SecurityPrincipal;
 
 public final class MethodPolicy {
+
     private static final AccessRule[] NO_RULES = new AccessRule[0];
 
     private final String operation;

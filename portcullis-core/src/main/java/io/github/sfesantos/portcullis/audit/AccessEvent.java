@@ -11,6 +11,7 @@ public record AccessEvent(Instant timestamp,
                           boolean granted,
                           Check deniedBy,
                           String reason) {
+
     public Optional<SecurityPrincipal> user() {
         return Optional.ofNullable(principal);
     }

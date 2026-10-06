@@ -5,7 +5,7 @@ import io.github.sfesantos.portcullis.ratelimit.RateLimiter.Decision;
 import java.time.Duration;
 
 public final class TokenBucket {
-    
+
     private final double capacity;
     private final double nanosPerToken;
     private final long windowNanos;

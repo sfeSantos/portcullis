@@ -4,6 +4,7 @@ import java.lang.reflect.Type;
 import java.time.Duration;
 
 record IdempotencyPolicy(String operation, Duration ttl, boolean required, int keyIndex, Type resultType) {
+
     static final int NO_KEY_PARAMETER = -1;
 
     String keyFrom(Object[] arguments) {

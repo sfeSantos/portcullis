@@ -3,8 +3,8 @@ package io.github.sfesantos.portcullis.policy;
 import java.util.Set;
 
 final class Authorities {
-    private Authorities() {
-    }
+
+    private Authorities() {}
 
     static boolean holdsAny(Set<String> held, String[] wanted) {
         for (var value : wanted) {

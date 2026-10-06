@@ -173,7 +173,8 @@ Optional<SecurityPrincipal> fromSpringSecurity() {
     if (auth == null || !auth.isAuthenticated() || auth instanceof AnonymousAuthenticationToken) {
         return Optional.empty();
     }
-    var roles = auth.getAuthorities().stream()
+    var roles = auth.getAuthorities()
+            .stream()
             .map(GrantedAuthority::getAuthority)
             .filter(a -> a.startsWith("ROLE_"))
             .map(a -> a.substring(5))

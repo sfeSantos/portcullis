@@ -4,5 +4,6 @@ import java.util.Optional;
 
 @FunctionalInterface
 public interface PrincipalProvider {
+
     Optional<SecurityPrincipal> currentPrincipal();
 }

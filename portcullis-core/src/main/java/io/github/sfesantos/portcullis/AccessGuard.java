@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class AccessGuard {
+
     private static final Object[] NO_ARGUMENTS = new Object[0];
 
     private final PrincipalProvider principalProvider;
@@ -83,6 +84,7 @@ public final class AccessGuard {
     }
 
     public static final class Builder {
+
         private PrincipalProvider principalProvider = PortcullisContext::current;
         private final Map<Class<?>, OwnershipResolver<?>> ownership = new HashMap<>();
         private final Map<Class<?>, TenantResolver<?>> tenancy = new HashMap<>();
@@ -93,8 +95,7 @@ public final class AccessGuard {
         private Duration idempotencyLease = Duration.ofMinutes(1);
         private Clock clock = Clock.systemUTC();
 
-        Builder() {
-        }
+        Builder() {}
 
         public Builder principalProvider(PrincipalProvider provider) {
             this.principalProvider = Objects.requireNonNull(provider, "provider");

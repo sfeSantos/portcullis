@@ -18,7 +18,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Turns the Portcullis annotations on a method into a {@link MethodPolicy}: a fixed array of
+ * {@link AccessRule}s that the guard runs on every call.
+ *
+ * <p>Reading annotations needs reflection, which is too slow to repeat on each call. So the work is
+ * split in two. The first call to a method on a given target class compiles its policy: it reads the
+ * annotations through {@link AnnotatedMethod}, validates them, resolves {@code @ResourceId} parameter
+ * positions and the registered resolvers, and orders the rules from cheapest to most expensive. The
+ * result is cached per target class (a {@link ClassValue}, so it goes away with the class loader) and
+ * per method. Every later call is one map lookup plus a loop over the rule array, with no reflection,
+ * no string building and no allocation beyond the request itself.
+ *
+ * <p>A misconfigured method throws {@link PolicyDefinitionException} while compiling. Nothing is
+ * cached in that case, so the call is denied every time instead of running with a partial policy.
+ */
 public final class PolicyCompiler {
+
     private final Resolvers resolvers;
     private final ClassValue<ConcurrentHashMap<Method, MethodPolicy>> cache = new ClassValue<>() {
         @Override

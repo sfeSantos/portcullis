@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers
 class RedisRateLimiterTest {
+
     @Container
     private static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
 
@@ -128,6 +129,7 @@ class RedisRateLimiterTest {
     }
 
     private static final class BrokenRedis implements RedisScripts {
+
         @Override
         public List<Object> evalSha(String sha1, String key, String... args) {
             throw new IllegalStateException("connection refused");

@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.time.Duration;
 
 public final class CaffeineIdempotencyStore implements IdempotencyStore {
+
     public static final long DEFAULT_MAXIMUM_SIZE = 100_000;
 
     private final Cache<String, Entry> entries;
@@ -38,17 +39,18 @@ public final class CaffeineIdempotencyStore implements IdempotencyStore {
     @Override
     public Reservation reserve(String key, Duration lease, Type resultType) {
         var reservation = new Reservation[1];
-        entries.asMap().compute(key, (k, current) -> {
-            if (current == null) {
-                reservation[0] = Reservation.ACQUIRED;
+        entries.asMap()
+                .compute(key, (k, current) -> {
+                    if (current == null) {
+                        reservation[0] = Reservation.ACQUIRED;
 
-                return Entry.inProgress(lease);
-            }
+                        return Entry.inProgress(lease);
+                    }
 
-            reservation[0] = current.completed() ? Reservation.completed(current.result()) : Reservation.IN_PROGRESS;
+                    reservation[0] = current.completed() ? Reservation.completed(current.result()) : Reservation.IN_PROGRESS;
 
-            return current;
-        });
+                    return current;
+                });
 
         return reservation[0];
     }
@@ -60,7 +62,8 @@ public final class CaffeineIdempotencyStore implements IdempotencyStore {
 
     @Override
     public void release(String key) {
-        entries.asMap().computeIfPresent(key, (k, current) -> current.completed() ? current : null);
+        entries.asMap()
+                .computeIfPresent(key, (k, current) -> current.completed() ? current : null);
     }
 
     long size() {
@@ -70,6 +73,7 @@ public final class CaffeineIdempotencyStore implements IdempotencyStore {
     }
 
     private record Entry(boolean completed, Object result, long lifetimeNanos) {
+
         static Entry inProgress(Duration lease) {
             return new Entry(false, null, lease.toNanos());
         }
@@ -80,6 +84,7 @@ public final class CaffeineIdempotencyStore implements IdempotencyStore {
     }
 
     private static final class EntryExpiry implements Expiry<String, Entry> {
+
         @Override
         public long expireAfterCreate(String key, Entry entry, long currentTime) {
             return entry.lifetimeNanos();

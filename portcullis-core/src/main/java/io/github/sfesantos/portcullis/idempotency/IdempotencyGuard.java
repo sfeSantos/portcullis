@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class IdempotencyGuard {
+
     public static final int MAX_KEY_LENGTH = 128;
 
     private static final String ANONYMOUS = "anonymous";
@@ -100,7 +101,9 @@ public final class IdempotencyGuard {
     }
 
     private String subject() {
-        return principalProvider.currentPrincipal().map(SecurityPrincipal::id).orElse(ANONYMOUS);
+        return principalProvider.currentPrincipal()
+                .map(SecurityPrincipal::id)
+                .orElse(ANONYMOUS);
     }
 
     private IdempotencyPolicy policyFor(Method method, Class<?> targetClass) {

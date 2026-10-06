@@ -30,6 +30,7 @@ public final class Portcullis {
     }
 
     public static SecurityPrincipal requirePrincipal() {
-        return currentPrincipal().orElseThrow(() -> new UnauthenticatedException("authentication required"));
+        return currentPrincipal()
+                .orElseThrow(() -> new UnauthenticatedException("authentication required"));
     }
 }

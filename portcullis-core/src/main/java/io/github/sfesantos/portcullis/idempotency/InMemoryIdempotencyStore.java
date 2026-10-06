@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
 
 public final class InMemoryIdempotencyStore implements IdempotencyStore {
+
     private static final long SWEEP_INTERVAL_NANOS = Duration.ofMinutes(1).toNanos();
 
     private final ConcurrentHashMap<String, Entry> entries = new ConcurrentHashMap<>();
@@ -61,11 +62,13 @@ public final class InMemoryIdempotencyStore implements IdempotencyStore {
         var due = nextSweep.get();
 
         if (now - due >= 0 && nextSweep.compareAndSet(due, now + SWEEP_INTERVAL_NANOS)) {
-            entries.values().removeIf(entry -> entry.isExpired(now));
+            entries.values()
+                    .removeIf(entry -> entry.isExpired(now));
         }
     }
 
     private record Entry(boolean completed, Object result, long expiresAt) {
+
         static Entry inProgress(long expiresAt) {
             return new Entry(false, null, expiresAt);
         }

@@ -4,7 +4,7 @@ import java.util.Optional;
 
 @FunctionalInterface
 public interface IdempotencyKeyProvider {
-    IdempotencyKeyProvider NONE = Optional::empty;
 
+    IdempotencyKeyProvider NONE = Optional::empty;
     Optional<String> currentKey();
 }

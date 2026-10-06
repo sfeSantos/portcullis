@@ -6,6 +6,7 @@ import redis.clients.jedis.exceptions.JedisNoScriptException;
 import java.util.List;
 
 public final class JedisRedisScripts implements RedisScripts {
+
     private final UnifiedJedis jedis;
 
     public JedisRedisScripts(UnifiedJedis jedis) {

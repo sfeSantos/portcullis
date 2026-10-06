@@ -12,14 +12,14 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Repeatable(SameTenant.List.class)
 public @interface SameTenant {
+
     Class<?> value();
-
     String[] bypassRoles() default {};
-
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
     @interface List {
+
         SameTenant[] value();
     }
 }

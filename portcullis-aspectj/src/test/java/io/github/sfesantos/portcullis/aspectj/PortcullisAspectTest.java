@@ -47,7 +47,9 @@ class PortcullisAspectTest {
     static class ProfileController {
 
         public String me() {
-            return PortcullisContext.current().map(SecurityPrincipal::id).orElseThrow();
+            return PortcullisContext.current()
+                    .map(SecurityPrincipal::id)
+                    .orElseThrow();
         }
 
         @PublicAccess
@@ -62,8 +64,7 @@ class PortcullisAspectTest {
             return "helper ran";
         }
 
-        private void helper() {
-        }
+        private void helper() {}
 
         public static String version() {
             return "1.0";
