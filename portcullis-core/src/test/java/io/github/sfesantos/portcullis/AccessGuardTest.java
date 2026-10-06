@@ -263,6 +263,62 @@ class AccessGuardTest {
             as(ADMIN);
             assertThatCode(() -> call(OrderApi.class, "limited")).doesNotThrowAnyException();
         }
+
+        @Test
+        void anonymousCallersShareOneBucketWithoutAKey() {
+            call(OrderApi.class, "limited");
+            call(OrderApi.class, "limited");
+            assertThatThrownBy(() -> call(OrderApi.class, "limited")).isInstanceOf(RateLimitExceededException.class);
+        }
+
+        @Test
+        void eachAnonymousKeyHasItsOwnBucket() {
+            var address = new AtomicReference<String>("10.0.0.1");
+            var keyed = AccessGuard.builder()
+                    .principalProvider(java.util.Optional::empty)
+                    .anonymousKey(() -> java.util.Optional.ofNullable(address.get()))
+                    .build();
+            var limited = method(OrderApi.class, "limited");
+
+            keyed.check(limited, OrderApi.class, null);
+            keyed.check(limited, OrderApi.class, null);
+            assertThatThrownBy(() -> keyed.check(limited, OrderApi.class, null))
+                    .isInstanceOf(RateLimitExceededException.class);
+
+            address.set("10.0.0.2");
+            assertThatCode(() -> keyed.check(limited, OrderApi.class, null)).doesNotThrowAnyException();
+        }
+
+        @Test
+        void emptyAnonymousKeyFallsBackToTheSharedBucket() {
+            var address = new AtomicReference<String>("10.0.0.1");
+            var keyed = AccessGuard.builder()
+                    .principalProvider(java.util.Optional::empty)
+                    .anonymousKey(() -> java.util.Optional.ofNullable(address.get()))
+                    .build();
+            var limited = method(OrderApi.class, "limited");
+
+            address.set("");
+            keyed.check(limited, OrderApi.class, null);
+            address.set(null);
+            keyed.check(limited, OrderApi.class, null);
+            assertThatThrownBy(() -> keyed.check(limited, OrderApi.class, null))
+                    .isInstanceOf(RateLimitExceededException.class);
+        }
+
+        @Test
+        void failingAnonymousKeyProviderDeniesTheCall() {
+            var keyed = AccessGuard.builder()
+                    .principalProvider(java.util.Optional::empty)
+                    .anonymousKey(() -> {
+                        throw new IllegalStateException("no request bound");
+                    })
+                    .build();
+            var limited = method(OrderApi.class, "limited");
+
+            assertThatThrownBy(() -> keyed.check(limited, OrderApi.class, null))
+                    .isInstanceOf(IllegalStateException.class);
+        }
     }
 
     @Nested

@@ -131,7 +131,7 @@ public final class PolicyCompiler {
         var key = limit.key().isBlank() ? method.qualifiedName() : limit.key();
         var window = Duration.of(limit.window(), limit.unit());
 
-        return new RateLimitRule(key, limit.requests(), window, resolvers.rateLimiter());
+        return new RateLimitRule(key, limit.requests(), window, resolvers.rateLimiter(), resolvers.anonymousKeys());
     }
 
     @SuppressWarnings("unchecked")

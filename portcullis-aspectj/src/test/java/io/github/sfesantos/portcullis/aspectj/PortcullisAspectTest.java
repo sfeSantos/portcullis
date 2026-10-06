@@ -3,12 +3,14 @@ package io.github.sfesantos.portcullis.aspectj;
 import io.github.sfesantos.portcullis.ForbiddenException;
 import io.github.sfesantos.portcullis.Portcullis;
 import io.github.sfesantos.portcullis.PortcullisContext;
+import io.github.sfesantos.portcullis.RateLimitExceededException;
 import io.github.sfesantos.portcullis.SecurityPrincipal;
 import io.github.sfesantos.portcullis.SimplePrincipal;
 import io.github.sfesantos.portcullis.UnauthenticatedException;
 import io.github.sfesantos.portcullis.annotation.Authenticated;
 import io.github.sfesantos.portcullis.annotation.OwnedBy;
 import io.github.sfesantos.portcullis.annotation.PublicAccess;
+import io.github.sfesantos.portcullis.annotation.RateLimit;
 import io.github.sfesantos.portcullis.annotation.RequiresRole;
 import io.github.sfesantos.portcullis.annotation.ResourceId;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +18,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -71,7 +75,17 @@ class PortcullisAspectTest {
         }
     }
 
+    static class LoginController {
+
+        @RateLimit(requests = 1)
+        public String login() {
+            return "token";
+        }
+    }
+
     private final OrderController orders = new OrderController();
+    private final LoginController login = new LoginController();
+    private final AtomicReference<String> clientAddress = new AtomicReference<>("10.0.0.1");
     private final ProfileController profile = new ProfileController();
     private final SimplePrincipal alice = SimplePrincipal.of("alice");
 
@@ -81,6 +95,7 @@ class PortcullisAspectTest {
 
         Portcullis.configure()
                 .ownership(Order.class, (SecurityPrincipal user, Long id) -> user.id().equals(owners.get(id)))
+                .anonymousKey(() -> Optional.ofNullable(clientAddress.get()))
                 .install();
     }
 
@@ -125,5 +140,14 @@ class PortcullisAspectTest {
     void classLevelAnnotationCoversPublicMethodsButNotTheirPrivateHelpers() {
         assertThat(PortcullisContext.callAs(alice, profile::me)).isEqualTo("alice");
         assertThat(PortcullisContext.callAs(alice, profile::viaHelper)).isEqualTo("helper ran");
+    }
+
+    @Test
+    void anonymousCallsAreLimitedPerKey() {
+        assertThat(login.login()).isEqualTo("token");
+        assertThatThrownBy(login::login).isInstanceOf(RateLimitExceededException.class);
+
+        clientAddress.set("10.0.0.2");
+        assertThat(login.login()).isEqualTo("token");
     }
 }
