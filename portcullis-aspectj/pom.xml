@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.sfesantos</groupId>
+        <artifactId>portcullis-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>portcullis-aspectj</artifactId>
+    <name>Portcullis AspectJ</name>
+    <description>Applies the Portcullis checks to every annotated method through AspectJ weaving, in any framework or none.</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.sfesantos</groupId>
+            <artifactId>portcullis-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- ajc adds aspectOf(), without which other projects cannot weave this aspect -->
+            <plugin>
+                <groupId>dev.aspectj</groupId>
+                <artifactId>aspectj-maven-plugin</artifactId>
+                <configuration>
+                    <complianceLevel>${java.version}</complianceLevel>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <showWeaveInfo>false</showWeaveInfo>
+                    <Xlint>ignore</Xlint>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>test-compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,16 @@
+package io.github.sfesantos.portcullis.policy;
+
+import io.github.sfesantos.portcullis.OwnershipResolver;
+import io.github.sfesantos.portcullis.TenantResolver;
+import io.github.sfesantos.portcullis.ratelimit.RateLimiter;
+
+import java.util.Map;
+
+public record Resolvers(Map<Class<?>, OwnershipResolver<?>> ownership,
+                        Map<Class<?>, TenantResolver<?>> tenancy,
+                        RateLimiter rateLimiter) {
+    public Resolvers {
+        ownership = Map.copyOf(ownership);
+        tenancy = Map.copyOf(tenancy);
+    }
+}
