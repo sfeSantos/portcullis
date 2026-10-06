@@ -1,5 +1,7 @@
 # Portcullis
 
+A portcullis is the heavy iron grille that drops down over a castle gate. Getting into the courtyard does not get you through it; the guard decides who passes. This library is that inner gate for your methods.
+
 Being logged in does not mean you may touch that record.
 
 Portcullis is a Java library I built around that idea. You annotate the method, and before it runs the library checks that someone is logged in, that this person has the right role or permission, that the requested resource belongs to them, that it is in the same tenant and that they have not gone over the call limit. It also makes sure a repeated request, like a payment resent after a timeout, runs only once.
