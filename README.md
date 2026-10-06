@@ -111,7 +111,7 @@ Requires Java 25.
 <dependency>
     <groupId>io.github.sfesantos</groupId>
     <artifactId>portcullis-aspectj</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
@@ -247,7 +247,7 @@ Good for a single instance when you want to be sure memory does not grow without
 <dependency>
     <groupId>io.github.sfesantos</groupId>
     <artifactId>portcullis-caffeine</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
@@ -266,7 +266,7 @@ The counter lives in Redis, so every instance sees the same limit. Each call is 
 <dependency>
     <groupId>io.github.sfesantos</groupId>
     <artifactId>portcullis-redis</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
