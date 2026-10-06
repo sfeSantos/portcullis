@@ -6,7 +6,7 @@
 
     <groupId>io.github.sfesantos</groupId>
     <artifactId>portcullis-parent</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.1.1</version>
     <packaging>pom</packaging>
 
     <name>Portcullis</name>
@@ -59,6 +59,10 @@
         <jedis.version>8.0.1</jedis.version>
         <caffeine.version>3.3.0</caffeine.version>
         <testcontainers.version>2.0.5</testcontainers.version>
+
+        <!-- local deploys stop at validation; the release workflow publishes -->
+        <central.autoPublish>false</central.autoPublish>
+        <central.waitUntil>validated</central.waitUntil>
     </properties>
 
     <dependencyManagement>
@@ -225,7 +229,8 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
-                            <waitUntil>validated</waitUntil>
+                            <autoPublish>${central.autoPublish}</autoPublish>
+                            <waitUntil>${central.waitUntil}</waitUntil>
                         </configuration>
                     </plugin>
                 </plugins>
