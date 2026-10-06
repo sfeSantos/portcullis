@@ -103,6 +103,28 @@ Anything that needs a user already implies `@Authenticated`. The checks run in t
 
 Only public, non static methods are intercepted. Private methods and lambdas inside an annotated class are left out.
 
+## Finding unprotected methods
+
+A method with no annotation is not intercepted at all, so a forgotten check fails silently. `PolicyCoverage` finds those methods. Put it in a test and the build breaks when someone adds an endpoint without saying who may call it:
+
+```java
+@Test
+void everyEndpointDeclaresItsAccess() {
+    PolicyCoverage.of("com.acme.api").requireCovered();
+}
+```
+
+It scans the package and its subpackages and lists every public, non static method that has neither a check needing a user (`@Authenticated`, `@RequiresRole`, `@RequiresPermission`, `@SameTenant`, `@OwnedBy`, on the method or the class) nor `@PublicAccess`. The error names each one. A few details:
+
+- `@RateLimit` or `@Idempotent` alone do not count: they authorize nobody. An endpoint that is open on purpose says so with `@PublicAccess`.
+- An annotation on an interface method does not count for the implementation, because the aspect does not see it there either.
+- Records and enums are skipped, and so are `toString`, `equals` and `hashCode`.
+- A package with no classes fails, so a typo in the name cannot pass as "nothing to protect".
+
+You can also pass classes, or mix both: `PolicyCoverage.of("com.acme.api").and(AdminController.class)`. To get the list instead of an exception, call `uncovered()`.
+
+Nothing changes at runtime: this only reads annotations, once, wherever you call it.
+
 ## Installation
 
 Requires Java 25.
