@@ -1,8 +1,8 @@
 # Portcullis
 
-Estar logado não quer dizer que você pode mexer naquele registro.
+Being logged in does not mean you may touch that record.
 
-Portcullis é uma lib Java que eu criei em cima dessa ideia. Você anota o método e, antes de ele rodar, ela confere se tem alguém logado, se essa pessoa tem a role ou a permissão certa, se o recurso pedido é dela, se está no mesmo tenant e se ela não passou do limite de chamadas. Ela também garante que uma requisição repetida, como um pagamento reenviado depois de um timeout, rode uma vez só.
+Portcullis is a Java library I built around that idea. You annotate the method, and before it runs the library checks that someone is logged in, that this person has the right role or permission, that the requested resource belongs to them, that it is in the same tenant and that they have not gone over the call limit. It also makes sure a repeated request, like a payment resent after a timeout, runs only once.
 
 ```java
 @GetMapping("/orders/{id}")
@@ -10,26 +10,26 @@ Portcullis é uma lib Java que eu criei em cima dessa ideia. Você anota o méto
 public Order get(@ResourceId @PathVariable Long id) { ... }
 ```
 
-Se o pedido não for do usuário logado, a chamada para ali com um 403. O método nem é executado.
+If the order does not belong to the logged in user, the call stops there with a 403. The method never runs.
 
-## Por que eu fiz
+## Why I built it
 
-A maioria das APIs confere bem quem está chamando. O token é validado, a sessão existe, o gateway deixa passar. O que costuma faltar é a pergunta seguinte: esse registro específico é de quem está pedindo? Quando ela não é feita, basta trocar o id na URL para ler os dados de outra pessoa. Não tem nada de sofisticado nisso, e é um dos problemas de segurança mais comuns em API.
+Most APIs are good at checking who is calling. The token is validated, the session exists, the gateway lets the request through. What is usually missing is the next question: does this specific record belong to whoever is asking? When nobody asks it, changing the id in the URL is enough to read someone else's data. There is nothing clever about it, and it is one of the most common security problems in APIs.
 
-A correção é simples, mas precisa estar em todo endpoint que recebe um id, sem exceção. E uma regra que depende de ser lembrada em cada endpoint vai ser esquecida em algum. Normalmente ela fica espalhada: um `if` no controller, outro no service, cada um escrito de um jeito, e olhando o método não dá para saber se ele está protegido.
+The fix is simple, but it has to be in every endpoint that takes an id, with no exceptions. A rule that depends on being remembered in every endpoint will be forgotten in one of them. It usually ends up scattered: an `if` in the controller, another in the service, each written differently, and looking at the method you cannot tell whether it is protected.
 
-Eu queria que essa regra ficasse declarada no próprio método, com uma anotação, de um jeito que esquecer fique visível em code review. E queria isso sem me prender a um framework. Então a Portcullis segue algumas regras:
+I wanted that rule declared on the method itself, with an annotation, so that forgetting it shows up in code review. And I wanted it without tying myself to a framework. So Portcullis follows a few rules:
 
-- o núcleo não depende de nada; a interceptação é feita com AspectJ, então funciona igual em Spring, Micronaut, Quarkus ou Java puro
-- a regra de posse é uma função Java comum, que você escreve e testa como qualquer outro código
-- custo baixo: as anotações são lidas uma vez por método, e depois disso não tem reflexão por chamada
-- na dúvida, nega: anotação mal configurada ou resolver que falha bloqueiam a chamada
+- the core depends on nothing; interception is done with AspectJ, so it works the same in Spring, Micronaut, Quarkus or plain Java
+- the ownership rule is a plain Java function that you write and test like any other code
+- low cost: annotations are read once per method, and after that there is no reflection per call
+- when in doubt, deny: a misconfigured annotation or a failing resolver blocks the call
 
-## O que ela não faz
+## What it does not do
 
-A Portcullis não autentica ninguém: ela usa o usuário que o seu framework já autenticou. Também não cuida de HTTPS, validação de entrada, CORS, CSRF ou firewall. Ela é a última checagem antes do método rodar, a que fica mais perto do dado.
+Portcullis does not authenticate anyone: it uses the user your framework has already authenticated. It also does not deal with HTTPS, input validation, CORS, CSRF or firewalls. It is the last check before the method runs, the one closest to the data.
 
-## Exemplo completo
+## Full example
 
 ```java
 @Authenticated
@@ -58,12 +58,12 @@ public class OrderController {
 }
 ```
 
-Algumas coisas que esse exemplo mostra:
+A few things this example shows:
 
-- anotação na classe vale para todos os métodos públicos dela, e a do método substitui a da classe
-- `bypassRoles` deixa um admin passar sem ser dono do recurso
-- quando o método recebe mais de um id, cada `@ResourceId` diz de qual tipo é
-- se o id vem dentro do corpo da requisição, o DTO implementa `HasResourceId`:
+- an annotation on the class applies to all its public methods, and one on the method replaces the one on the class
+- `bypassRoles` lets an admin through without owning the resource
+- when the method takes more than one id, each `@ResourceId` says which type it is
+- if the id comes inside the request body, the DTO implements `HasResourceId`:
 
 ```java
 record UpdateOrder(Long orderId, String note) implements HasResourceId<Long> {
@@ -71,39 +71,39 @@ record UpdateOrder(Long orderId, String note) implements HasResourceId<Long> {
 }
 ```
 
-E a configuração, feita uma vez na subida da aplicação:
+And the configuration, done once at application startup:
 
 ```java
 Portcullis.configure()
-        .principalProvider(currentUser)                                 // de onde vem o usuário logado
+        .principalProvider(currentUser)                                 // where the logged in user comes from
         .ownership(Order.class, (SecurityPrincipal user, Long id) -> orders.existsByIdAndOwnerId(id, user.id()))
         .ownership(Item.class, (SecurityPrincipal user, Long id) -> items.isOwnedBy(id, user.id()))
         .auditListener(new LoggingAuditListener())
         .install();
 ```
 
-## Anotações
+## Annotations
 
-| Anotação | Onde | O que exige |
+| Annotation | Where | What it requires |
 |---|---|---|
-| `@Authenticated` | método, classe | alguém logado |
-| `@RequiresRole({"ADMIN", "SUPPORT"})` | método, classe | qualquer uma das roles (`match = Match.ALL` para todas) |
-| `@RequiresPermission({"orders:read"})` | método, classe | todas as permissões (`match = Match.ANY` para qualquer uma) |
-| `@OwnedBy(Order.class)` | método | o recurso do `@ResourceId` é do usuário |
-| `@SameTenant(Invoice.class)` | método | o recurso do `@ResourceId` está no tenant do usuário |
-| `@RateLimit(requests = 60)` | método, classe | no máximo N chamadas por usuário na janela |
-| `@PublicAccess` | método | ignora login, role e permissão definidos na classe |
-| `@ResourceId` | parâmetro | marca o id usado por `@OwnedBy` e `@SameTenant` |
-| `@Idempotent` | método | a mesma requisição repetida roda uma vez só |
-| `@IdempotencyKey` | parâmetro | marca a chave de idempotência enviada pelo cliente |
+| `@Authenticated` | method, class | someone logged in |
+| `@RequiresRole({"ADMIN", "SUPPORT"})` | method, class | any of the roles (`match = Match.ALL` for all of them) |
+| `@RequiresPermission({"orders:read"})` | method, class | all of the permissions (`match = Match.ANY` for any of them) |
+| `@OwnedBy(Order.class)` | method | the `@ResourceId` resource belongs to the user |
+| `@SameTenant(Invoice.class)` | method | the `@ResourceId` resource is in the user's tenant |
+| `@RateLimit(requests = 60)` | method, class | at most N calls per user in the window |
+| `@PublicAccess` | method | ignores login, role and permission set on the class |
+| `@ResourceId` | parameter | marks the id used by `@OwnedBy` and `@SameTenant` |
+| `@Idempotent` | method | the same repeated request runs only once |
+| `@IdempotencyKey` | parameter | marks the idempotency key sent by the client |
 
-Tudo que precisa de usuário já implica `@Authenticated`. As checagens rodam nesta ordem e param na primeira que falhar: login, rate limit, roles, permissões, tenant, posse. Coloquei as mais baratas primeiro, assim uma chamada negada não chega a consultar o banco.
+Anything that needs a user already implies `@Authenticated`. The checks run in this order and stop at the first one that fails: login, rate limit, roles, permissions, tenant, ownership. I put the cheapest ones first, so a denied call never gets as far as querying the database.
 
-Só métodos públicos e não estáticos são interceptados. Métodos privados e lambdas dentro de uma classe anotada ficam de fora.
+Only public, non static methods are intercepted. Private methods and lambdas inside an annotated class are left out.
 
-## Instalação
+## Installation
 
-Precisa de Java 25.
+Requires Java 25.
 
 ```xml
 <dependency>
@@ -113,7 +113,7 @@ Precisa de Java 25.
 </dependency>
 ```
 
-Depois, o weaving. Eu uso o modo em que o `javac` compila normalmente e o `ajc` costura as classes já compiladas. Assim não tem conflito com Lombok, MapStruct ou outro annotation processor:
+Then the weaving. I use the mode where `javac` compiles as usual and `ajc` weaves the already compiled classes. That way there is no conflict with Lombok, MapStruct or any other annotation processor:
 
 ```xml
 <plugin>
@@ -153,17 +153,17 @@ Depois, o weaving. Eu uso o modo em que o `javac` compila normalmente e o `ajc` 
 </plugin>
 ```
 
-Se preferir não mexer no build, dá para usar load time weaving rodando a aplicação com `-javaagent:aspectjweaver-1.9.25.jar`. O jar já traz o `META-INF/aop.xml`.
+If you would rather not touch the build, you can use load time weaving by running the application with `-javaagent:aspectjweaver-1.9.25.jar`. The jar already ships `META-INF/aop.xml`.
 
-Se o projeto já tem um mecanismo de interceptação próprio, também dá para dispensar o AspectJ e chamar a checagem direto:
+If your project already has its own interception mechanism, you can skip AspectJ and call the check directly:
 
 ```java
 Portcullis.guard().check(method, targetClass, arguments);
 ```
 
-## Quem está logado
+## Who is logged in
 
-A lib não autentica ninguém. Ela pergunta para um `PrincipalProvider` quem está logado, e você liga isso no que o seu framework já tem. O usuário é um `SecurityPrincipal` com `id()`, `roles()`, `permissions()` e `tenantId()`. Dá para implementar a interface no seu próprio tipo de usuário ou usar `SimplePrincipal.of("42").withRoles("ADMIN").withTenant("acme")`.
+The library does not authenticate anyone. It asks a `PrincipalProvider` who is logged in, and you wire that to whatever your framework already has. The user is a `SecurityPrincipal` with `id()`, `roles()`, `permissions()` and `tenantId()`. You can implement the interface on your own user type or use `SimplePrincipal.of("42").withRoles("ADMIN").withTenant("acme")`.
 
 Spring Security:
 
@@ -199,7 +199,7 @@ Quarkus:
                 .withRoles(identity.getRoles().toArray(String[]::new)))
 ```
 
-Sem framework nenhum, o padrão é ler de `PortcullisContext`, que você preenche num filtro:
+With no framework at all, the default is to read from `PortcullisContext`, which you fill in a filter:
 
 ```java
 try (var scope = PortcullisContext.bind(principal)) {
@@ -209,37 +209,37 @@ try (var scope = PortcullisContext.bind(principal)) {
 
 ## Rate limit
 
-`@RateLimit` conta chamadas por usuário em cada método. Chamadas anônimas dividem um único contador. O algoritmo é token bucket: com `requests = 60` e janela de um minuto, a pessoa pode fazer 60 chamadas seguidas, e depois ganha uma nova a cada segundo.
+`@RateLimit` counts calls per user on each method. Anonymous calls share a single counter. The algorithm is a token bucket: with `requests = 60` and a one minute window, a person can make 60 calls in a row, and then gets a new one every second.
 
 ```java
-@RateLimit(requests = 60)                                         // 60 por minuto
+@RateLimit(requests = 60)                                         // 60 per minute
 public List<Order> list() { ... }
 
-@RateLimit(requests = 3, window = 10, unit = ChronoUnit.MINUTES)  // 3 a cada 10 minutos
+@RateLimit(requests = 3, window = 10, unit = ChronoUnit.MINUTES)  // 3 every 10 minutes
 public void resendConfirmationEmail() { ... }
 
-@RateLimit(requests = 100, key = "search")                        // os dois métodos dividem o mesmo limite
+@RateLimit(requests = 100, key = "search")                        // both methods share the same limit
 public List<Product> searchByName(String name) { ... }
 
 @RateLimit(requests = 100, key = "search")
 public List<Product> searchByTag(String tag) { ... }
 ```
 
-Quando o limite estoura, sai uma `RateLimitExceededException` (429) com `retryAfter()`, que serve direto para o header `Retry-After`.
+When the limit is exceeded you get a `RateLimitExceededException` (429) with `retryAfter()`, which goes straight into the `Retry-After` header.
 
-Onde os contadores ficam depende do que você configurar:
+Where the counters live depends on what you configure:
 
-| Opção | Módulo | Vale para |
+| Option | Module | Covers |
 |---|---|---|
-| `InMemoryRateLimiter` | já vem no core, é o padrão | uma instância só |
-| `CaffeineRateLimiter` | `portcullis-caffeine` | uma instância só, com memória limitada |
-| `RedisRateLimiter` | `portcullis-redis` | qualquer número de instâncias |
+| `InMemoryRateLimiter` | ships with core, the default | a single instance |
+| `CaffeineRateLimiter` | `portcullis-caffeine` | a single instance, with bounded memory |
+| `RedisRateLimiter` | `portcullis-redis` | any number of instances |
 
-Se a aplicação roda em mais de uma instância, use Redis. Com as outras duas, cada instância conta sozinha, e três instâncias com limite 60 deixam passar 180.
+If the application runs on more than one instance, use Redis. With the other two, each instance counts on its own, and three instances with a limit of 60 let 180 through.
 
 ### Caffeine
 
-Bom para quando é uma instância só e você quer garantir que a memória não cresce sem limite, por exemplo sob ataque com muitos ids diferentes. Os contadores expiram sozinhos depois de uma janela sem uso.
+Good for a single instance when you want to be sure memory does not grow without bound, for example under an attack with many different ids. Counters expire on their own after a window without use.
 
 ```xml
 <dependency>
@@ -251,14 +251,14 @@ Bom para quando é uma instância só e você quer garantir que a memória não 
 
 ```java
 Portcullis.configure()
-        .rateLimiter(CaffeineRateLimiter.create())               // até 100 mil contadores
+        .rateLimiter(CaffeineRateLimiter.create())               // up to 100 thousand counters
         // .rateLimiter(CaffeineRateLimiter.withMaximumSize(10_000))
         .install();
 ```
 
 ### Redis
 
-O contador vive no Redis, então todas as instâncias enxergam o mesmo limite. Cada chamada é um script Lua atômico, uma ida e volta ao Redis só. O script usa o relógio do próprio Redis, então diferença de horário entre as máquinas não bagunça a contagem. Os contadores expiram sozinhos depois de uma janela parada.
+The counter lives in Redis, so every instance sees the same limit. Each call is one atomic Lua script, a single round trip to Redis. The script uses Redis's own clock, so clock differences between machines do not mess up the count. Counters expire on their own after an idle window.
 
 ```xml
 <dependency>
@@ -268,7 +268,7 @@ O contador vive no Redis, então todas as instâncias enxergam o mesmo limite. C
 </dependency>
 ```
 
-O módulo não traz cliente Redis. Ele usa o que a aplicação já tem, e eu deixei adaptadores prontos para Lettuce e Jedis.
+The module does not bring a Redis client. It uses the one your application already has, and I left ready made adapters for Lettuce and Jedis.
 
 Lettuce:
 
@@ -290,7 +290,7 @@ Portcullis.configure()
         .install();
 ```
 
-Spring Boot com `spring-boot-starter-data-redis` já usa Lettuce por baixo. Dá para aproveitar o cliente que o Spring configurou, com host, senha e TLS:
+Spring Boot with `spring-boot-starter-data-redis` already uses Lettuce underneath. You can reuse the client Spring configured, with host, password and TLS:
 
 ```java
 @Configuration
@@ -305,24 +305,24 @@ class RateLimitConfig {
 }
 ```
 
-Com Redis Cluster, passe `RedisClusterClient.connect().sync()` para o `LettuceRedisScripts`. Cada contador é uma chave só, então funciona sem configuração extra.
+With Redis Cluster, pass `RedisClusterClient.connect().sync()` to `LettuceRedisScripts`. Each counter is a single key, so it works with no extra configuration.
 
-Para outro cliente, implemente `RedisScripts`: são dois métodos, `evalSha` e `eval`.
+For another client, implement `RedisScripts`: it has two methods, `evalSha` and `eval`.
 
-E se o Redis cair? Por padrão a chamada é negada, coerente com o resto da lib. Se para você disponibilidade pesa mais que o limite, dá para deixar passar:
+What if Redis goes down? By default the call is denied, in line with the rest of the library. If availability matters more to you than the limit, you can let it through:
 
 ```java
 RedisRateLimiter.builder(new LettuceRedisScripts(connection.sync()))
-        .onFailure(OnRedisFailure.ALLOW)   // loga um aviso e libera a chamada
-        .keyPrefix("myapp:rl:")            // padrão: portcullis:rl:
+        .onFailure(OnRedisFailure.ALLOW)   // logs a warning and lets the call through
+        .keyPrefix("myapp:rl:")            // default: portcullis:rl:
         .build();
 ```
 
-## Idempotência
+## Idempotency
 
-Pensa numa transferência. O cliente manda a requisição, a rede cai antes da resposta voltar, e ele tenta de novo. Do lado do servidor, a primeira já tinha dado certo. Sem cuidado, o dinheiro sai duas vezes.
+Think of a money transfer. The client sends the request, the network drops before the response comes back, and it tries again. On the server, the first one had already gone through. Without care, the money leaves twice.
 
-O jeito comum de resolver é o cliente mandar uma chave única por operação, normalmente no header `Idempotency-Key`, e o servidor lembrar o que já fez com ela. É isso que o `@Idempotent` faz:
+The usual fix is for the client to send a unique key per operation, normally in the `Idempotency-Key` header, and for the server to remember what it already did with it. That is what `@Idempotent` does:
 
 ```java
 @PostMapping("/transfers")
@@ -333,23 +333,23 @@ public Transfer transfer(@ResourceId @RequestParam Long from,
                          @IdempotencyKey @RequestHeader("Idempotency-Key") String key) { ... }
 ```
 
-O que acontece com cada requisição:
+What happens to each request:
 
-- primeira vez com a chave: o método roda e o resultado fica guardado por 24 horas
-- mesma chave depois disso: o método não roda de novo, e o cliente recebe o mesmo resultado da primeira vez
-- mesma chave enquanto a primeira ainda está rodando: 409
-- se o método lançar exceção, a chave é liberada e o cliente pode tentar de novo
-- sem chave: 400; com `@Idempotent(required = false)` o método só roda normalmente
+- first time with the key: the method runs and the result is kept for 24 hours
+- same key after that: the method does not run again, and the client gets the same result as the first time
+- same key while the first one is still running: 409
+- if the method throws, the key is released and the client can try again
+- no key: 400; with `@Idempotent(required = false)` the method just runs normally
 
-A chave vale por usuário e por método. Dois usuários mandando a mesma chave não se misturam, e ninguém consegue ler a resposta guardada de outra pessoa. As checagens de acesso rodam antes, então uma chamada negada não ocupa a chave.
+The key is scoped per user and per method. Two users sending the same key do not get mixed up, and nobody can read someone else's stored response. Access checks run first, so a denied call does not take the key.
 
-O tempo de guarda muda na anotação:
+The retention time is set on the annotation:
 
 ```java
 @Idempotent(ttl = 7, unit = ChronoUnit.DAYS)
 ```
 
-Se você não quer a chave na assinatura do método, dá para ler o header num lugar só. No Spring:
+If you do not want the key in the method signature, you can read the header in a single place. In Spring:
 
 ```java
 Portcullis.configure()
@@ -358,20 +358,20 @@ Portcullis.configure()
         .install();
 ```
 
-E aí basta `@Idempotent` no método. Um parâmetro com `@IdempotencyKey`, quando existe, tem prioridade.
+Then `@Idempotent` on the method is enough. A parameter with `@IdempotencyKey`, when present, takes priority.
 
-### Onde os resultados ficam
+### Where results are stored
 
-Os mesmos três lugares do rate limit, com a mesma regra: se tem mais de uma instância, use Redis. Com memória ou Caffeine, uma repetição que cai em outra instância roda de novo.
+The same three places as the rate limit, with the same rule: if you have more than one instance, use Redis. With memory or Caffeine, a retry that lands on another instance runs again.
 
 ```java
 Portcullis.configure()
         .idempotencyStore(RedisIdempotencyStore.of(redisScripts, new JacksonResultCodec(objectMapper)))
-        // ou CaffeineIdempotencyStore.create(), ou nada para ficar com o InMemoryIdempotencyStore padrão
+        // or CaffeineIdempotencyStore.create(), or nothing to keep the default InMemoryIdempotencyStore
         .install();
 ```
 
-O Redis guarda texto, então o resultado do método precisa ser convertido. A lib não escolhe um formato por você: você passa um `ResultCodec`. Com Jackson fica assim:
+Redis stores text, so the method's result has to be converted. The library does not pick a format for you: you pass a `ResultCodec`. With Jackson it looks like this:
 
 ```java
 class JacksonResultCodec implements ResultCodec {
@@ -399,9 +399,9 @@ class JacksonResultCodec implements ResultCodec {
 }
 ```
 
-O `redisScripts` é o mesmo `LettuceRedisScripts` ou `JedisRedisScripts` do rate limit.
+`redisScripts` is the same `LettuceRedisScripts` or `JedisRedisScripts` used for the rate limit.
 
-Enquanto o método roda, a chave fica reservada por um prazo curto, 1 minuto por padrão. Se a instância cair no meio, a chave se libera sozinha depois disso, em vez de ficar presa pelo ttl inteiro. Se algum método seu demora mais que isso, aumente:
+While the method runs, the key is reserved for a short lease, 1 minute by default. If the instance dies halfway, the key frees itself after that instead of staying locked for the whole ttl. If any of your methods take longer than that, raise it:
 
 ```java
 Portcullis.configure()
@@ -409,22 +409,22 @@ Portcullis.configure()
         .install();
 ```
 
-Uma limitação: a lib não compara o corpo da requisição. Se o cliente reusar a mesma chave com outro conteúdo, ele recebe a resposta da primeira chamada. Gere uma chave nova para cada operação.
+One limitation: the library does not compare the request body. If the client reuses the same key with different content, it gets the response from the first call. Generate a new key for each operation.
 
-## Erros
+## Errors
 
-Toda exceção estende `PortcullisException` e tem `status()`, então um único handler resolve:
+Every exception extends `PortcullisException` and has `status()`, so a single handler covers them all:
 
-| Exceção | Status | Quando |
+| Exception | Status | When |
 |---|---|---|
-| `UnauthenticatedException` | 401 | ninguém logado |
-| `ForbiddenException` | 403 | role, permissão, tenant ou posse; `check()` diz qual |
-| `InvalidIdempotencyKeyException` | 400 | `@Idempotent` sem chave, ou chave com mais de 128 caracteres |
-| `IdempotencyConflictException` | 409 | a mesma chave ainda está sendo processada |
-| `RateLimitExceededException` | 429 | passou do limite; `retryAfter()` diz quanto esperar |
-| `PolicyDefinitionException` | 500 | anotação mal usada ou resolver não registrado |
+| `UnauthenticatedException` | 401 | nobody logged in |
+| `ForbiddenException` | 403 | role, permission, tenant or ownership; `check()` says which |
+| `InvalidIdempotencyKeyException` | 400 | `@Idempotent` with no key, or a key longer than 128 characters |
+| `IdempotencyConflictException` | 409 | the same key is still being processed |
+| `RateLimitExceededException` | 429 | over the limit; `retryAfter()` says how long to wait |
+| `PolicyDefinitionException` | 500 | misused annotation or unregistered resolver |
 
-No Spring:
+In Spring:
 
 ```java
 @RestControllerAdvice
@@ -441,37 +441,37 @@ class PortcullisErrors {
 }
 ```
 
-## Auditoria
+## Auditing
 
-Toda decisão sobre um método protegido vira um `AccessEvent`: quem chamou, o quê, se passou e, se não passou, qual checagem barrou e por quê. Registre quantos `AuditListener` quiser:
+Every decision on a protected method becomes an `AccessEvent`: who called, what, whether it was allowed and, if not, which check blocked it and why. Register as many `AuditListener`s as you like:
 
 ```java
 Portcullis.configure()
         .auditListener(new LoggingAuditListener())                         // System.Logger
-        .auditListener(AuditListener.deniedOnly(event -> alerts.send(event))) // só as negações
+        .auditListener(AuditListener.deniedOnly(event -> alerts.send(event))) // denials only
         .install();
 ```
 
-Um listener que lança exceção é logado e não muda a decisão. Sem nenhum listener, nenhum evento é criado.
+A listener that throws is logged and does not change the decision. With no listener at all, no event is created.
 
 ## Performance
 
-Medi de forma simples, sem JMH: uma chamada com login, role e posse custa entre 25 e 30 ns a mais que a mesma chamada sem proteção. Isso porque:
+I measured it in a simple way, without JMH: a call with login, role and ownership costs between 25 and 30 ns more than the same call without protection. That is because:
 
-- as anotações de cada método são lidas uma vez, viram uma lista de regras já ligadas aos resolvers e ficam em cache
-- depois disso não tem reflexão, nem busca em mapa de resolvers, nem cópia dos argumentos quando nenhuma regra precisa deles
-- respostas 401, 403 e 429 não montam stack trace, o que deixa barato recusar muita requisição
+- each method's annotations are read once, turned into a list of rules already bound to their resolvers, and cached
+- after that there is no reflection, no lookup in a resolver map, and no copy of the arguments when no rule needs them
+- 401, 403 and 429 responses do not build a stack trace, which keeps turning away lots of requests cheap
 
-Com Redis, o custo dominante passa a ser a ida e volta de rede de cada `@RateLimit` e `@Idempotent`.
+With Redis, the dominant cost becomes the network round trip for each `@RateLimit` and `@Idempotent`.
 
-## Módulos
+## Modules
 
-| Artefato | Conteúdo | Dependências |
+| Artifact | Contents | Dependencies |
 |---|---|---|
-| `portcullis-core` | anotações, `AccessGuard`, rate limit e idempotência em memória | nenhuma |
-| `portcullis-aspectj` | aspecto que aplica as anotações | `aspectjrt` |
+| `portcullis-core` | annotations, `AccessGuard`, in memory rate limit and idempotency | none |
+| `portcullis-aspectj` | aspect that enforces the annotations | `aspectjrt` |
 | `portcullis-caffeine` | `CaffeineRateLimiter`, `CaffeineIdempotencyStore` | `caffeine` |
-| `portcullis-redis` | `RedisRateLimiter`, `RedisIdempotencyStore` e adaptadores | Lettuce ou Jedis, o que você já usa |
+| `portcullis-redis` | `RedisRateLimiter`, `RedisIdempotencyStore` and adapters | Lettuce or Jedis, whichever you already use |
 
 ## Build
 
@@ -479,8 +479,8 @@ Com Redis, o custo dominante passa a ser a ida e volta de rede de cada `@RateLim
 mvn verify
 ```
 
-Os testes do módulo Redis sobem um Redis com Testcontainers, então precisam de Docker.
+The Redis module tests start a Redis with Testcontainers, so they need Docker.
 
-## Licença
+## License
 
-Apache 2.0. Veja o arquivo [LICENSE](LICENSE).
+Apache 2.0. See the [LICENSE](LICENSE) file.
