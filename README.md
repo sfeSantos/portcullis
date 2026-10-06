@@ -211,7 +211,7 @@ try (var scope = PortcullisContext.bind(principal)) {
 
 ## Rate limit
 
-`@RateLimit` counts calls per user on each method. Anonymous calls share a single counter. The algorithm is a token bucket: with `requests = 60` and a one minute window, a person can make 60 calls in a row, and then gets a new one every second.
+`@RateLimit` counts calls per user on each method. Anonymous calls share a single counter unless you give them a key (see below). The algorithm is a token bucket: with `requests = 60` and a one minute window, a person can make 60 calls in a row, and then gets a new one every second.
 
 ```java
 @RateLimit(requests = 60)                                         // 60 per minute
@@ -228,6 +228,19 @@ public List<Product> searchByTag(String tag) { ... }
 ```
 
 When the limit is exceeded you get a `RateLimitExceededException` (429) with `retryAfter()`, which goes straight into the `Retry-After` header.
+
+### Anonymous callers
+
+A login or sign up endpoint has nobody logged in yet, so by default every caller lands in the same bucket and a limit of 10 per minute would apply to the whole internet at once. Give anonymous calls a key, usually the client address, and each one gets its own bucket:
+
+```java
+Portcullis.configure()
+        .anonymousKey(() -> Optional.ofNullable(RequestContextHolder.getRequestAttributes())
+                .map(a -> ((ServletRequestAttributes) a).getRequest().getRemoteAddr()))
+        .install();
+```
+
+If the provider returns nothing, the call falls back to the shared bucket. Behind a reverse proxy, `getRemoteAddr()` is the proxy unless the framework reads `X-Forwarded-For`; in Spring Boot that is `server.forward-headers-strategy: native`. Only trust that header when the proxy is the one setting it.
 
 Where the counters live depends on what you configure:
 

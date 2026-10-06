@@ -90,6 +90,7 @@ public final class AccessGuard {
         private final Map<Class<?>, TenantResolver<?>> tenancy = new HashMap<>();
         private final List<AuditListener> auditListeners = new ArrayList<>();
         private RateLimiter rateLimiter;
+        private AnonymousKeyProvider anonymousKeys = AnonymousKeyProvider.NONE;
         private IdempotencyStore idempotencyStore;
         private IdempotencyKeyProvider idempotencyKeyProvider = IdempotencyKeyProvider.NONE;
         private Duration idempotencyLease = Duration.ofMinutes(1);
@@ -117,6 +118,13 @@ public final class AccessGuard {
 
         public Builder rateLimiter(RateLimiter rateLimiter) {
             this.rateLimiter = Objects.requireNonNull(rateLimiter, "rateLimiter");
+
+            return this;
+        }
+
+        // Gives anonymous callers their own rate limit bucket, usually keyed by client address.
+        public Builder anonymousKey(AnonymousKeyProvider provider) {
+            this.anonymousKeys = Objects.requireNonNull(provider, "provider");
 
             return this;
         }
@@ -155,7 +163,7 @@ public final class AccessGuard {
         public AccessGuard build() {
             var principals = nullSafe(principalProvider);
             var limiter = rateLimiter != null ? rateLimiter : new InMemoryRateLimiter();
-            var compiler = new PolicyCompiler(new Resolvers(ownership, tenancy, limiter));
+            var compiler = new PolicyCompiler(new Resolvers(ownership, tenancy, limiter, anonymousKeys));
             var store = idempotencyStore != null ? idempotencyStore : new InMemoryIdempotencyStore();
             var idempotency = new IdempotencyGuard(store, idempotencyKeyProvider, principals, idempotencyLease);
 
