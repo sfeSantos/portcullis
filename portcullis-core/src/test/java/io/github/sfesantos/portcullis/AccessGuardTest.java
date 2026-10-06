@@ -305,6 +305,20 @@ class AccessGuardTest {
             assertThatThrownBy(() -> keyed.check(limited, OrderApi.class, null))
                     .isInstanceOf(RateLimitExceededException.class);
         }
+
+        @Test
+        void failingAnonymousKeyProviderDeniesTheCall() {
+            var keyed = AccessGuard.builder()
+                    .principalProvider(java.util.Optional::empty)
+                    .anonymousKey(() -> {
+                        throw new IllegalStateException("no request bound");
+                    })
+                    .build();
+            var limited = method(OrderApi.class, "limited");
+
+            assertThatThrownBy(() -> keyed.check(limited, OrderApi.class, null))
+                    .isInstanceOf(IllegalStateException.class);
+        }
     }
 
     @Nested

@@ -6,6 +6,7 @@ import io.github.sfesantos.portcullis.TenantResolver;
 import io.github.sfesantos.portcullis.ratelimit.RateLimiter;
 
 import java.util.Map;
+import java.util.Objects;
 
 public record Resolvers(Map<Class<?>, OwnershipResolver<?>> ownership,
                         Map<Class<?>, TenantResolver<?>> tenancy,
@@ -15,5 +16,6 @@ public record Resolvers(Map<Class<?>, OwnershipResolver<?>> ownership,
     public Resolvers {
         ownership = Map.copyOf(ownership);
         tenancy = Map.copyOf(tenancy);
+        Objects.requireNonNull(anonymousKeys, "anonymousKeys");
     }
 }
